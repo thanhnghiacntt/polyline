@@ -1,0 +1,30 @@
+<html>
+	<head>
+		<script src='https://code.jquery.com/jquery-3.4.1.min.js'></script>		
+		<script src='temp.js'></script>
+		<script>
+		function OK(){
+			var in1 = $("#in1")[0].value;
+			var in2 = $("#in2")[0].value;
+			if(in1 == null || in1.trim().length == 0){				
+				$("#test").html("Nhập giá trị input thứ nhất");
+				return;
+			}
+			
+			if(in2 == null || in2.trim().length == 0){				
+				$("#test").html("Nhập giá trị input thứ hai");
+				return;
+			}
+			var str = polyline.lineIntersect(in1, in2);
+			$("#test").html(JSON.stringify(str));
+		}
+		</script>
+	</head>
+	
+	<body>
+		<input id="in1" value="{zaaBsgosSAOWkDy@oN_CJqGn@kJn@"></input>
+		<input id="in2" value="uwaaBq}osSyH\qGn@kHd@a@sD"></input>
+		<button id="ok" style="width:90px; height: 25px" onclick="OK()"></button>
+		<div id="test">ABC</div>
+	</body>
+</html>
