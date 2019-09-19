@@ -1,10 +1,42 @@
 var polyline = {};
 
+/**
+ * Click start
+ *
+ */
+function start(){
+	var in1 = $("#in1")[0].value;
+	var in2 = $("#in2")[0].value;
+	if(in1 == null || in1.trim().length == 0){				
+		$("#test").html("Please input polyline1");
+		return;
+	}	
+	if(in2 == null || in2.trim().length == 0){				
+		$("#test").html("Please input polyline2");
+		return;
+	}
+	var str = polyline.lineIntersect(in1.trim(), in2.trim());
+	$("#test").html(JSON.stringify(str));
+}
+
+/**
+ * Round
+ *
+ * @param {Number} value
+ * @returns {Number}
+ */
 function py2_round(value) {
-    // Google's polyline algorithm uses the same rounding strategy as Python 2, which is different from JS for negative values
     return Math.floor(Math.abs(value) + 0.5) * (value >= 0 ? 1 : -1);
 }
 
+/**
+ * Encode
+ *
+ * @param {Number} current
+ * @param {Number} previous
+ * @param {Number} factor
+ * @returns {String}
+ */
 function encode(current, previous, factor) {
     current = py2_round(current * factor);
     previous = py2_round(previous * factor);
@@ -22,11 +54,22 @@ function encode(current, previous, factor) {
     return output;
 }
 
-
+/**
+ * Point to string
+ *
+ * @param {Array<Number:2>} point
+ * @returns {String}
+ */
 function pointToString(point) {
 	return point[0] + ";" + point[1];
 }
 
+/**
+ * String to Array<Number:2>
+ *
+ * @param {String} str
+ * @returns {Array<Number>}
+ */
 function stringToPoint(str) {
 	var token = item.split(";");
 	var lat = +token[0];
@@ -34,29 +77,25 @@ function stringToPoint(str) {
 	return [lat, lng];
 }
 
+/**
+ * Distinct of two point
+ *
+ * @param {Array<Number>} p1
+ * @param {Array<Number>} p1
+ * @returns {Number}
+ */
 function distinct(p1, p2){
-	return Math.pow(Math.pow(p1[0] - p2[0] ,2) +  Math.pow(p1[1] - p2[1] ,2), 0.5);
+	return Math.pow(Math.pow(p1[0] - p2[0], 2) +  Math.pow(p1[1] - p2[1], 2), 0.5);
 }
 
 /**
-* Compare from lat to lng
-*
-*/
-function compare(a, b) {
-	if (a[0] < b[0] || (a[0] == b[0] && a[1] < b[1])) {
-		return -1;
-	}
-	if (a[0] > b[0] || (a[0] == b[0] && a[1] > b[1])) {
-		return 1;
-	}
-	return 0;
-}
-
-
-/**
-* Find common point of two polyline
-* Returns the common straight line of two lines
-*/
+ * Find common point of two polyline
+ * Returns the common straight line of two lines
+ *
+ * @param {String} p1
+ * @param {String} p1
+ * @returns {String}
+ */
 polyline.lineIntersect = function(p1, p2) {
 	var l1 = polyline.decode(p1);
 	var l2 = polyline.decode(p2);
@@ -153,7 +192,6 @@ polyline.lineIntersect = function(p1, p2) {
 
 /**
  * Decodes to a [latitude, longitude] coordinates array.
- *
  * This is adapted from the implementation in Project-OSRM.
  *
  * @param {String} str
@@ -172,25 +210,16 @@ polyline.decode = function(str, precision) {
         latitude_change,
         longitude_change,
         factor = Math.pow(10, Number.isInteger(precision) ? precision : 5);
-
-    // Coordinates have variable length when encoded, so just keep
-    // track of whether we've hit the end of the string. In each
-    // loop iteration, a single coordinate is decoded.
     while (index < str.length) {
-
-        // Reset shift, result, and byte
         byte = null;
         shift = 0;
         result = 0;
-
         do {
             byte = str.charCodeAt(index++) - 63;
             result |= (byte & 0x1f) << shift;
             shift += 5;
         } while (byte >= 0x20);
-
         latitude_change = ((result & 1) ? ~(result >> 1) : (result >> 1));
-
         shift = result = 0;
 
         do {
@@ -200,10 +229,8 @@ polyline.decode = function(str, precision) {
         } while (byte >= 0x20);
 
         longitude_change = ((result & 1) ? ~(result >> 1) : (result >> 1));
-
         lat += latitude_change;
         lng += longitude_change;
-
         coordinates.push([lat / factor, lng / factor]);
     }
 
@@ -220,8 +247,8 @@ polyline.decode = function(str, precision) {
 polyline.encode = function(coordinates, precision) {
     if (!coordinates.length) { return ''; }
 
-    var factor = Math.pow(10, Number.isInteger(precision) ? precision : 5),
-        output = encode(coordinates[0][0], 0, factor) + encode(coordinates[0][1], 0, factor);
+    var factor = Math.pow(10, Number.isInteger(precision) ? precision : 5);
+    var output = encode(coordinates[0][0], 0, factor) + encode(coordinates[0][1], 0, factor);
 
     for (var i = 1; i < coordinates.length; i++) {
         var a = coordinates[i], b = coordinates[i - 1];
@@ -232,19 +259,16 @@ polyline.encode = function(coordinates, precision) {
     return output;
 };
 
-function flipped(coords) {
-    var flipped = [];
-    for (var i = 0; i < coords.length; i++) {
-        flipped.push(coords[i].slice().reverse());
-    }
-    return flipped;
-}
-
-
 /**
-* Check a in middle b and c
-* If cos(bac) < anpha return true, else return false
-*/
+ * Check a in middle b and c
+ * If cos(bac) < anpha return true, else return false
+ *
+ * @param {Array[2]} a
+ * @param {Array[2]} b
+ * @param {Array[2]} c
+ * @param {Number} anpha
+ * @returns {Boolean}
+ */
 polyline.isPointOnLine = function(a, b, c, anpha = Math.PI/90){
 	var n = 10000000;
 	if ((Math.floor(b[0] * n) == Math.floor(a[0] * n) && Math.floor(b[1] * n) == Math.floor(a[1] * n)) || 
@@ -260,40 +284,4 @@ polyline.isPointOnLine = function(a, b, c, anpha = Math.PI/90){
 		return true;
 	}
 	return false;
-}
-
-/**
- * Encodes a GeoJSON LineString feature/geometry.
- *
- * @param {Object} geojson
- * @param {Number} precision
- * @returns {String}
- */
-polyline.fromGeoJSON = function(geojson, precision) {
-    if (geojson && geojson.type === 'Feature') {
-        geojson = geojson.geometry;
-    }
-    if (!geojson || geojson.type !== 'LineString') {
-        throw new Error('Input must be a GeoJSON LineString');
-    }
-    return polyline.encode(flipped(geojson.coordinates), precision);
-};
-
-/**
- * Decodes to a GeoJSON LineString geometry.
- *
- * @param {String} str
- * @param {Number} precision
- * @returns {Object}
- */
-polyline.toGeoJSON = function(str, precision) {
-    var coords = polyline.decode(str, precision);
-    return {
-        type: 'LineString',
-        coordinates: flipped(coords)
-    };
-};
-
-if (typeof module === 'object' && module.exports) {
-    module.exports = polyline;
 }

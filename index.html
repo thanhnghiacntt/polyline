@@ -1,30 +1,29 @@
 <html>
 	<head>
-		<script src='jquery-3.4.1.min.js'></script>		
-		<script src='temp.js'></script>
+		<meta charset="UTF-8">
+		<link rel="stylesheet" href="css/bootstrap.min.css"/>
+		<link rel="stylesheet" href="css/temp.css"/>
+		<script src='js/jquery-3.4.1.min.js'></script>		
+		<script src='js/temp.js'></script>
 		<script>
-		function OK(){
-			var in1 = $("#in1")[0].value;
-			var in2 = $("#in2")[0].value;
-			if(in1 == null || in1.trim().length == 0){				
-				$("#test").html("Nhập giá trị input thứ nhất");
-				return;
-			}
-			
-			if(in2 == null || in2.trim().length == 0){				
-				$("#test").html("Nhập giá trị input thứ hai");
-				return;
-			}
-			var str = polyline.lineIntersect(in1, in2);
-			$("#test").html(JSON.stringify(str));
-		}
 		</script>
 	</head>
 	
 	<body>
-		<input id="in1" value="{zaaBsgosSAOWkDy@oN_CJqGn@kJn@"></input>
-		<input id="in2" value="uwaaBq}osSyH\qGn@kHd@a@sD"></input>
-		<button id="ok" style="width:90px; height: 25px" onclick="OK()"></button>
-		<div id="test">ABC</div>
+		<form class="form">
+		  <div class="form-group">
+			<label for="in1">Input Polyline1</label>
+			<input type="text" class="form-control" id="in1" aria-describedby="emailHelp" placeholder="{zaaBsgosSAOWkDy@oN_CJqGn@kJn@">
+		  </div>
+		  <div class="form-group">
+			<label for="in2">Input Polyline2</label>
+			<input type="text" class="form-control" id="in2" placeholder="uwaaBq}osSyH\qGn@kHd@a@sD">
+		  </div>
+		  <button type="button" class="btn btn-primary"  onclick="start()">Submit</button>
+		  <div class="form-group">
+			<label for="in2">Result: </label>			
+			<span id="test" class="form-text text-muted"></span>
+		  </div>
+		</form>
 	</body>
 </html>
