@@ -89,6 +89,44 @@ function distinct(p1, p2){
 }
 
 /**
+ * Distinct of point to array
+ *
+ * @param {Point} p
+ * @param {Array<Point>} array
+ * @returns {Number, Point} Dist and point in array which has minimum distinct
+ */
+function minDistinctPoint(p, array){
+	var rs = null;
+	var dist = 360;
+	for(var i in array){
+		var temp = distinct(p, array[i]);
+		if(temp < dist){
+			dist = temp;
+			rs = array[i];
+		}
+	};
+	return {"distinct":dist, "point": rs};
+}
+
+/**
+ * Splice element if exist
+ *
+ * @param {Array<Point>} array
+ * @param {Point} point
+ * @returns {Array<Point>} array
+ *
+ */
+function spliceIfExist(array, point){
+	for(var i in array){
+		var n = array[i];
+		if(n[0] == point[0] && n[1] == point[1]){
+			array.splice(i, 1);
+		}
+	}
+	return array;
+}
+
+/**
  * Find common point of two polyline
  * Returns the common straight line of two lines
  *
@@ -150,6 +188,56 @@ polyline.lineIntersect = function(p1, p2) {
 		}
 	}
 
+	var groups = polyline.createGroups(full);
+
+	if(firstOfFirst != null && rs[pointToString(firstOfFirst)] != null){
+		first = firstOfFirst;
+	}
+	var listResult = [];
+	var temp = [];
+	// Điểm tồn tại của trong đường
+	while(add1.length > 0 || add2.length > 0){
+		spliceIfExist(add1, first);
+		spliceIfExist(add2, first);
+			
+		var node = pointToString(first);
+		var indexGroup = polyline.findNodeInGroup(groups, node);
+		if(temp[indexGroup] == null){
+			temp[indexGroup] = [];
+		}
+		temp[indexGroup].push(first);
+		var t1 = minDistinctPoint(first, add1);
+		var t2 = minDistinctPoint(first, add2);
+		if(t1["point"] != null && t2["point"] != null){
+			var d1 = t1["distinct"];
+			var d2 = t2["distinct"];
+			if(d1 < d2){
+				first = t1["point"];
+			}else{
+				first = t2["point"];
+			}
+		}else if(t1["point"] != null){
+			first = t1["point"];
+		}else if(t2["point"] != null){
+			first = t2["point"];
+		}		
+	}
+	for(var i in temp){
+		var list = temp[i];
+		listResult.push(polyline.encode(list));
+	}
+	return listResult;
+}
+
+
+/**
+ * Creted group interconnection
+ *
+ * @param {Array<String>} full
+ * @returns {Array} groups
+ *
+ */
+polyline.createGroups = function(full){
 	var groups = [];
 	for(var i in full){
 		var e = full[i];
@@ -158,6 +246,7 @@ polyline.lineIntersect = function(p1, p2) {
 		var middle = t[1];
 		var right = t[2];
 		var exist = false;
+		var count = 0;
 		for(var i in groups){
 			var group = groups[i];
 			if(group[middle] != null || group[left] != null || group[right] != null){
@@ -165,6 +254,7 @@ polyline.lineIntersect = function(p1, p2) {
 				group[middle] = true;
 				group[middle] = true;
 				exist = true;
+				count++;
 			}
 		}
 		if(!exist){
@@ -175,65 +265,65 @@ polyline.lineIntersect = function(p1, p2) {
 			groups.push(group);
 		}
 	}
+	return polyline.joinGroups(groups);
+}
 
-	if(firstOfFirst != null && rs[pointToString(firstOfFirst)] != null){
-		first = firstOfFirst;
-	}
-	var listResult = [];
-	var temp = [];
-	// Điểm tồn tại của trong đường
-	while(add1.length > 0 || add2.length > 0){
-		if(add1.length > 0 && add2.length > 0){
-			if(first[0] == add1[0][0] && first[1] == add1[0][1] && first[0] == add2[0][0] && first[1] == add2[0][1]){
-				add1.splice(0,1);
-				add2.splice(0,1);
-			}else if(first[0] == add1[0][0] && first[1] == add1[0][1]){
-				add1.splice(0,1);
-			} else if(first[0] == add2[0][0] && first[1] == add2[0][1]){
-				add2.splice(0,1);
+/**
+ * Join group interconnection
+ *
+ * @param {Array} groups
+ * @returns {Array} groups
+ *
+ */
+polyline.joinGroups = function(groups){
+	if(polyline.isNeedJoin(groups)){
+		var i = 0;
+		while(i < groups.length){
+			var g1 = groups[i];
+			var j = i + 1;
+			while(j < groups.length){
+				var g2 = groups[j];
+				var temp = null;
+				for(var g in g2){
+					if(g1[g]){
+						temp = groups.splice(j,1)[0];
+						break;
+					}
+				}
+				if(temp != null){
+					for(var x in temp){
+						g1[x] = true;
+					}
+				}else{
+					j++;
+				}
 			}
-		} else if(add1.length > 0){
-			if(first[0] == add1[0][0] && first[1] == add1[0][1]){
-				add1.splice(0,1);
-			} 
-		} else if(add2.length > 0){
-			if(first[0] == add2[0][0] && first[1] == add2[0][1]){
-				add2.splice(0,1);
+			i++;
+		}
+	}
+	return groups;
+}
+
+/**
+ * Check group is duplicate
+ *
+ * @param {Array} groups
+ * @returns {Boolean} duplicate return true, else return false
+ *
+ */
+polyline.isNeedJoin = function(groups){
+	for(var i = 0; i < groups.length; i++){
+		var g1 = groups[i];
+		for(j = i + 1; j < groups.length; j++){
+			var g2 = groups[j];
+			for(var g in g1){
+				if(g2[g]){
+					return true;
+				}
 			}
 		}
-		var node = pointToString(first);
-		var indexGroup = polyline.findNodeInGroup(groups, node);
-		if(temp[indexGroup] == null){
-			temp[indexGroup] = [];
-		}
-		temp[indexGroup].push(first);
-		var p1 = [0, 0];
-		var p2 = [0, 0];
-		var exist = false;
-		if(add1.length > 0){
-			p1 = add1[0];
-			exist = true;
-		}
-		if(add2.length > 0){
-			p2 = add2[0];
-			exist = true;
-		}
-		
-		if(exist){
-			var t1 = distinct(first, p1);
-			var t2 = distinct(first, p2);
-			if(t1 < t2){
-				first = p1;
-			}else{
-				first = p2;
-			}
-		}		
 	}
-	for(var i in temp){
-		var list = temp[i];
-		listResult.push(polyline.encode(list));
-	}
-	return listResult;
+	return false;
 }
 
 /**
@@ -380,7 +470,10 @@ polyline.encode = function(coordinates, precision) {
  * @returns {Boolean}
  */
 polyline.isPointOnLine = function(a, b, c, anpha = Math.PI/90){
-	if (polyline.latLngToMeter(a, b) < 2.5 || polyline.latLngToMeter(a, c) < 2.5){
+	var d1 = polyline.latLngToMeter(b, a);
+	var d2 = polyline.latLngToMeter(a, c);
+	var d = polyline.latLngToMeter(b, c);
+	if (d1 + d2 - d < 2.5){
 		return true;
 	}
 	var x1 = b[0] - a[0];
