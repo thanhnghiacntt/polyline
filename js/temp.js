@@ -71,7 +71,7 @@ function pointToString(point) {
  * @returns {Array<Number>}
  */
 function stringToPoint(str) {
-	var token = item.split(";");
+	var token = str.split(";");
 	var lat = +token[0];
 	var lng = +token[1];
 	return [lat, lng];
@@ -101,9 +101,10 @@ polyline.lineIntersect = function(p1, p2) {
 	var l2 = polyline.decode(p2);
 	var bk1 = [];
 	var bk2 = [];
-	l1.forEach(function(e){bk1.push(e)});
-	l2.forEach(function(e){bk2.push(e)});
+	l1.forEach(function(e){bk1.push(e);});
+	l2.forEach(function(e){bk2.push(e);});
 	var rs = {};
+	var full = [];
 	var has = false;
 	var first = null;
 	var firstOfFirst = null;
@@ -117,12 +118,14 @@ polyline.lineIntersect = function(p1, p2) {
 			var c = l1[i + 1];
 			if(polyline.isPointOnLine(a, b, c)){
 				rs[pointToString(a)] = pointToString(b) + "|" + pointToString(c);
+				var join = pointToString(b) + "|" +  pointToString(a) + "|" + pointToString(c);
+				full.push(join);
 				bk2.splice(j, 1);
 				if(first == null){
 					first = a;
 					firstOfFirst = b;
 				}
-				add1.push(a);
+				add2.push(a);
 			}else{
 				j++;
 			}
@@ -136,58 +139,21 @@ polyline.lineIntersect = function(p1, p2) {
 			var c = l2[i + 1];
 			if(polyline.isPointOnLine(a, b, c)){
 				rs[pointToString(a)] = pointToString(b) + "|" + pointToString(c);
+				var join = pointToString(b) + "|" +  pointToString(a) + "|" + pointToString(c);
+				full.push(join);
 				bk1.splice(j, 1);
 				if(first == null){
 					first = a;
 					firstOfFirst = b;
 				}
-				add2.push(a);
+				add1.push(a);
 			}else{
 				j++;
 			}
 		}
-	}
-	if(firstOfFirst != null && rs[pointToString(firstOfFirst)] != null){
-		first = firstOfFirst;
-	}
-	var temp = [];
-	while(add1.length > 0 || add2.length > 0){
-		if(add1.length > 0 && add2.length > 0){
-			if(first[0] == add1[0][0] && first[1] == add1[0][1] && first[0] == add2[0][0] && first[1] == add2[0][1]){
-				add1.splice(0,1);
-				add2.splice(0,1);
-			}else if(first[0] == add1[0][0] && first[1] == add1[0][1]){
-				add1.splice(0,1);
-			} else if(first[0] == add2[0][0] && first[1] == add2[0][1]){
-				add2.splice(0,1);
-			}
-		} else if(add1.length > 0){
-			if(first[0] == add1[0][0] && first[1] == add1[0][1]){
-				add1.splice(0,1);
-			} 
-		} else if(add2.length > 0){
-			if(first[0] == add2[0][0] && first[1] == add2[0][1]){
-				add2.splice(0,1);
-			}
-		}
-		temp.push(first);
-		var p1 = [0, 0];
-		var p2 = [0, 0];
-		if(add1.length > 0){
-			p1 = add1[0];
-		}
-		if(add2.length > 0){
-			p2 = add2[0];
-		}
-		var t1 = distinct(first, p1);
-		var t2 = distinct(first, p2);
-		if(t1 < t2){
-			first = p1;
-		}else{
-			first = p2;
-		}
-	}
-	return polyline.encode(temp);
+	}	
+	
+	return "ab";
 }
 
 /**
