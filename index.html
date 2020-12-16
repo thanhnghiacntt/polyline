@@ -12,18 +12,51 @@
 	<body>
 		<form class="form">
 		  <div class="form-group">
-			<label for="in1">Input Polyline1</label>
+			<label for="in1">Polyline</label>
 			<input type="text" class="form-control" id="in1" aria-describedby="emailHelp" value="_r`aByrnsS{Di@oDv@{Dd@gB_N" placeholder="{zaaBsgosSAOWkDy@oN_CJqGn@kJn@">
 		  </div>
 		  <div class="form-group">
-			<label for="in2">Input Polyline2</label>
-			<input type="text" class="form-control" id="in2" value="e_aaBc{msSaCaUvDe@rDw@`CeA`JgD" placeholder="uwaaBq}osSyH\qGn@kHd@a@sD">
+			<label for="in2">Điền vào số km</label>
+			<input type="number" class="form-control" id="in2" value="0.05" placeholder="0.05">
 		  </div>
-		  <button type="button" class="btn btn-primary"  onclick="start()">Submit</button>
+		  <button type="button" class="btn btn-primary"  onclick="clickStart()">Submit</button>
 		  <div class="form-group">
 			<label for="in2">Result: </label>			
 			<span id="test" class="form-text text-muted"></span>
 		  </div>
 		</form>
+		<div id="root"></div>
+		<script>
+			var map = null;
+			function callback(){
+			  map = new map4d.Map(document.getElementById("root"),
+				  {
+					center: [108.21437,16.06448],
+					zoom: 17,
+					geolocate: true,
+					controls :true,
+					tilt: 0,        
+					accessKey: `208e1c99aa440d8bc2847aafa3bc0669`
+				  }
+				)
+			  //set switch mode Auto for automatically switching between 2D & 3D
+				map.setSwitchMode(map4d.SwitchMode.Auto)
+				map.enable3dMode(false)
+			}
+		</script>
+		<script src="https://api-dev.map4d.vn/sdk/map/js?key=208e1c99aa440d8bc2847aafa3bc0669&amp;callback=callback&amp;version=1.5.0" type="text/javascript"></script>
+		  <style>
+			body {
+			  margin: 0px;
+			  height: 100%;
+			}
+
+			#root {
+			  position: absolute;
+			  width: 100%;
+			  height: 100%;
+			  background-color: #f2efe9;
+			}
+		  </style>
 	</body>
 </html>

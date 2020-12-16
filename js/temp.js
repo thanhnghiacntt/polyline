@@ -1,22 +1,219 @@
 var polyline = {};
+var lineInput = null;
+var lineResult = null;
+var markers = [];
 
 /**
  * Click start
  *
  */
-function start(){
+function clickStart(){
+	if(lineInput != null){
+		lineInput.setMap(null);
+	}
+	if(lineResult != null){
+		lineResult.setMap(null);
+	}
+	if(markers.length > 0){
+		markers.forEach(e=> e.setMap(null));
+	}
 	var in1 = $("#in1")[0].value;
 	var in2 = $("#in2")[0].value;
 	if(in1 == null || in1.trim().length == 0){				
-		$("#test").html("Please input polyline1");
+		$("#test").html("Nhập polyline cần tính");
 		return;
 	}	
 	if(in2 == null || in2.trim().length == 0){				
-		$("#test").html("Please input polyline2");
+		$("#test").html("Nhập vào khoảng cách số km");
 		return;
 	}
-	var str = polyline.lineIntersect(in1.trim(), in2.trim());
-	$("#test").html(JSON.stringify(str));
+	var k = +in2.trim();
+	var str = start(in1.trim(), k);	
+	var temp = polyline.encode(str, 5);
+	$("#test").html(temp);
+	//tạo đối tượng polyline từ PolylineOptions
+	var t1 = polyline.decode(in1.trim(), 5);
+	lineInput = new map4d.Polyline({
+		path: switchLatLng(t1),
+		strokeColor: "#ff0000",
+		strokeOpacity: 1.0,
+        style: "dotted",
+		strokeWidth: 4});
+		
+	var rs = switchLatLng(str);
+	lineInput.setMap(map);
+	lineResult = new map4d.Polyline({
+		path: rs,
+		strokeColor: "#0000FF",
+		strokeOpacity: 1.0,
+		strokeWidth: 2});
+	lineResult.setMap(map);
+	var i = 0;
+	rs.forEach(e=>{
+		let marker = new map4d.Marker({
+		  title: i + "",
+		  position: {lat: e[1], lng:e[0]},
+		})
+		marker.setMap(this.map)
+		markers.push(marker);
+		i++;
+	});
+	
+}
+
+function switchLatLng(arr){
+	var rs = [];
+	arr.forEach(e=>{ var a = [e[1],e[0]]; rs.push(a)});
+	return rs;
+}
+
+/**
+* Lấy danh sách các điểm với khoảng cách k cho trước
+* @param {String} arr
+* @param {Number} k là khoảng cách tính bằng km* 
+* @returns {Array<Array<Number>>} trả về danh sách các điểm
+*/
+function start(arr, k){
+	var points = polyline.decode(arr, 5);
+	var r = meterToDegreeLatitude(k * 1000);
+	var list = getListPoints(points, r);
+	return list;
+}
+
+/**
+* Lấy danh sách các điểm với khoảng cách r cho trước
+* @param {Array<Array<Number>>} points là danh sách array cần tính
+* @param {Number} r là khoảng cách tính bằng radius
+* @returns {Array<Array<Number>>} trả về danh sách các điểm
+*/
+function getListPoints(points, r){
+	var l = 0.0;
+	var i = 0;
+	var rs = [];
+	var dis = r;
+	while(i < points.length - 1){
+		l += distinct(points[i], points[i+1]);
+		if(l >= r){
+			while(l >= r){
+				var t = getPoint(points[i], points[i+1], dis);
+				points[i][0] = t[0];
+				points[i][1] = t[1];
+				rs.push(t);
+				l = l - r;
+				dis = r;
+			}
+			dis = r - l;
+		}
+		i++;
+	}
+	return rs;
+}
+
+/**
+* Chuyển đổi đơn vị độ dài ra radius
+* @param {Number} meter là khoảng cách tính bằng meter 
+* @returns {Number} trả về khoảng cách đơn vị radius
+*/
+function meterToDegreeLatitude(meter){
+	var R = 6378137;
+	// Radius in meter of each
+	var earthRadiusInMeters = R;
+	// Ciruference half each
+	var halfEachCircuferenceInMeter = earthRadiusInMeters * Math.PI;
+	// Meter per degree latitude
+	var metersPerDegreeLatitude = halfEachCircuferenceInMeter / 180;
+	// Result meter to degree latitude
+	var result = meter / metersPerDegreeLatitude;
+	return result;
+}
+
+/**
+* Lấy điểm t nằm giữa p1 và p2 sao cho từ p1 đến t là bằng dis
+* @param {Array<Number>} p1
+* @param {Array<Number>} p2
+* @param {Number} dis
+* @returns {Array<Number>} trả về điểm t
+*/
+function getPoint(p1, p2, dis){
+	var a = dis;
+	var t = distinct(p1, p2);
+	var b = t - a;
+	var x1 = p1[0];
+	var y1 = p1[1];
+	var x2 = p2[0];
+	var y2 = p2[1];
+	var x = 0;
+	var y = 0;
+	if(dis == 0){
+		return p1;
+	}else if(dis == t){
+		return p2;
+	}else if(x1 == x2 && y1 == y2){
+		return p1;
+	}else if(x1 == x2){
+		x = x1;
+		if(y2 > y1){
+			y = y1 + a;
+		}else{
+			y = y1 - a;
+		}
+	}else if(y1 == y2){
+		y = y1;
+		if(x2 > x1){
+			x = x1 + a;
+		}else{
+			x = x1 - a;
+		}
+	}else{
+		// Giải phương trình đường tròn giao với đường thẳng
+		// (x-x1)^2 + (y-y1)^2 = a^2
+		// (y1-y2)(x-x1) + (x2-x1)(y-y1) = 0
+		// Đặt X = x-x1, Y = y-y1
+		// X^2 + Y^2 = a^2 (1)
+		// (y1-y2)X + (x2-x1)Y = 0 => X = ((x1-x2)/(y1-y2))*Y
+		var t = (x1-x2)/(y1-y2);
+		// Thay vào phương trình (1)
+		// t^2*Y^2 + Y^2 = a^2
+		// Nghiệm thứ 1
+		var Y = a/Math.pow(t*t + 1, 0.5);
+		var X = ((x1-x2)/(y1-y2)) * Y;
+		var x = X + x1;
+		var y = Y + y1;
+		if(isMiddle(x1, x2, x) && isMiddle(y1, y2, y)){
+			return [x,y];
+		}else{
+			// Nghiệm thứ 2
+			Y = 0 - a/Math.pow(t*t + 1, 0.5);
+			X = ((x1-x2)/(y1-y2)) * Y;
+			x = X + x1;
+			y = Y + y1;
+			if(isMiddle(x1, x2, x) && isMiddle(y1, y2, y)){
+				return [x,y];
+			}
+		}
+	}
+	return [x,y];
+}
+
+/**
+ * Kiểm tra z có nằm giữa z và y không
+ *
+ * @param {Number} x
+ * @param {Number} y
+ * @param {Number} z
+ * @returns {Boolean}
+ */
+function isMiddle(x, y, z){
+	if(x >= y){
+		if(x >= z && z >= y){
+			return true;
+		}
+	}else {
+		if(y >= z && z >= x){
+			return true;
+		}
+	}
+	return false;
 }
 
 /**
@@ -109,224 +306,6 @@ function minDistinctPoint(p, array){
 }
 
 /**
- * Splice element if exist
- *
- * @param {Array<Point>} array
- * @param {Point} point
- * @returns {Array<Point>} array
- *
- */
-function spliceIfExist(array, point){
-	for(var i in array){
-		var n = array[i];
-		if(n[0] == point[0] && n[1] == point[1]){
-			array.splice(i, 1);
-		}
-	}
-	return array;
-}
-
-/**
- * Find common point of two polyline
- * Returns the common straight line of two lines
- *
- * @param {String} p1
- * @param {String} p1
- * @returns {String}
- */
-polyline.lineIntersect = function(p1, p2) {
-	var l1 = polyline.decode(p1);
-	var l2 = polyline.decode(p2);
-	var bk1 = [];
-	var bk2 = [];
-	l1.forEach(function(e){bk1.push(e);});
-	l2.forEach(function(e){bk2.push(e);});
-	var rs = {};
-	var first = null;
-	var firstOfFirst = null;
-	var full = [];
-	var add1 = [];
-	var add2 = [];
-	for(var i = 0; i < l1.length - 1; i++){
-		var j = 0;
-		while(j < bk2.length){
-			var a = bk2[j];
-			var b = l1[i];
-			var c = l1[i + 1];
-			if(polyline.isPointOnLine(a, b, c)){
-				rs[pointToString(a)] = pointToString(b) + "|" + pointToString(c);
-				full.push(pointToString(b) + "|" + pointToString(a) + "|" + pointToString(c));
-				bk2.splice(j, 1);
-				if(first == null){
-					first = a;
-					firstOfFirst = b;
-				}
-				add2.push(a);
-			}else{
-				j++;
-			}
-		}
-	}
-	for(var i = 0; i < l2.length - 1; i++){
-		var j = 0;
-		while(j < bk1.length){
-			var a = bk1[j];
-			var b = l2[i];
-			var c = l2[i + 1];
-			if(polyline.isPointOnLine(a, b, c)){
-				rs[pointToString(a)] = pointToString(b) + "|" + pointToString(c);
-				full.push(pointToString(b) + "|" + pointToString(a) + "|" + pointToString(c));
-				bk1.splice(j, 1);
-				if(first == null){
-					first = a;
-					firstOfFirst = b;
-				}
-				add1.push(a);
-			}else{
-				j++;
-			}
-		}
-	}
-
-	var groups = polyline.createGroups(full);
-
-	if(firstOfFirst != null && rs[pointToString(firstOfFirst)] != null){
-		first = firstOfFirst;
-	}
-	var listResult = [];
-	var temp = [];
-	// Điểm tồn tại của trong đường
-	while(add1.length > 0 || add2.length > 0){
-		spliceIfExist(add1, first);
-		spliceIfExist(add2, first);
-			
-		var node = pointToString(first);
-		var indexGroup = polyline.findNodeInGroup(groups, node);
-		if(temp[indexGroup] == null){
-			temp[indexGroup] = [];
-		}
-		temp[indexGroup].push(first);
-		var t1 = minDistinctPoint(first, add1);
-		var t2 = minDistinctPoint(first, add2);
-		if(t1["point"] != null && t2["point"] != null){
-			var d1 = t1["distinct"];
-			var d2 = t2["distinct"];
-			if(d1 < d2){
-				first = t1["point"];
-			}else{
-				first = t2["point"];
-			}
-		}else if(t1["point"] != null){
-			first = t1["point"];
-		}else if(t2["point"] != null){
-			first = t2["point"];
-		}		
-	}
-	for(var i in temp){
-		var list = temp[i];
-		listResult.push(polyline.encode(list));
-	}
-	return listResult;
-}
-
-
-/**
- * Creted group interconnection
- *
- * @param {Array<String>} full
- * @returns {Array} groups
- *
- */
-polyline.createGroups = function(full){
-	var groups = [];
-	for(var i in full){
-		var e = full[i];
-		var t = e.split("|");
-		var left = t[0];
-		var middle = t[1];
-		var right = t[2];
-		var exist = false;
-		var count = 0;
-		for(var i in groups){
-			var group = groups[i];
-			if(group[middle] != null || group[left] != null || group[right] != null){
-				group[middle] = true;
-				group[middle] = true;
-				group[middle] = true;
-				exist = true;
-				count++;
-			}
-		}
-		if(!exist){
-			group = {};
-			group[middle] = true;
-			group[left] = true;
-			group[right] = true;
-			groups.push(group);
-		}
-	}
-	return polyline.joinGroups(groups);
-}
-
-/**
- * Join group interconnection
- *
- * @param {Array} groups
- * @returns {Array} groups
- *
- */
-polyline.joinGroups = function(groups){
-	if(polyline.isNeedJoin(groups)){
-		var i = 0;
-		while(i < groups.length){
-			var g1 = groups[i];
-			var j = i + 1;
-			while(j < groups.length){
-				var g2 = groups[j];
-				var temp = null;
-				for(var g in g2){
-					if(g1[g]){
-						temp = groups.splice(j,1)[0];
-						break;
-					}
-				}
-				if(temp != null){
-					for(var x in temp){
-						g1[x] = true;
-					}
-				}else{
-					j++;
-				}
-			}
-			i++;
-		}
-	}
-	return groups;
-}
-
-/**
- * Check group is duplicate
- *
- * @param {Array} groups
- * @returns {Boolean} duplicate return true, else return false
- *
- */
-polyline.isNeedJoin = function(groups){
-	for(var i = 0; i < groups.length; i++){
-		var g1 = groups[i];
-		for(j = i + 1; j < groups.length; j++){
-			var g2 = groups[j];
-			for(var g in g1){
-				if(g2[g]){
-					return true;
-				}
-			}
-		}
-	}
-	return false;
-}
-
-/**
  * Lat lng to meters
  *
  * @param {Array{lat, lng}} p1
@@ -348,46 +327,6 @@ polyline.latLngToMeter = function(p1, p2){
     var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     var d = R * c;
     return d; // meters
-}
-
-/**
- * Return index of groups content node
- *
- * @param {Array} groups
- * @param {String} node
- * @returns {Integer}
- *
- */
-polyline.findNodeInGroup = function(groups, node){
-	for(var i in groups){
-		var group = groups[i];
-		if(group[node]){
-			return i;
-		}
-	}
-	return -1;
-}
-
-/**
- * Find node in full array, if exist add into hash
- *
- * @param {Hash} hash
- * @param {Array} full
- * @param {String} node
- * @returns {Hash}
- *
- */
-polyline.findFullAddHash = function(hash, full, node) {
-	for(var i in full){
-		var value = full[i];
-		if(value.indexOf("|" + node + "|") > -1){
-			var temp = value.split("|");
-			hash[temp[0]] = true;
-			hash[temp[1]] = true;
-			hash[temp[2]] = true;
-		}
-	}
-	return hash;
 }
 
 /**
@@ -458,31 +397,3 @@ polyline.encode = function(coordinates, precision) {
 
     return output;
 };
-
-/**
- * Check a in middle b and c
- * If cos(bac) < anpha return true, else return false
- *
- * @param {Array[2]} a
- * @param {Array[2]} b
- * @param {Array[2]} c
- * @param {Number} anpha
- * @returns {Boolean}
- */
-polyline.isPointOnLine = function(a, b, c, anpha = Math.PI/90){
-	var d1 = polyline.latLngToMeter(b, a);
-	var d2 = polyline.latLngToMeter(a, c);
-	var d = polyline.latLngToMeter(b, c);
-	if (d1 + d2 - d < 2.5){
-		return true;
-	}
-	var x1 = b[0] - a[0];
-	var y1 = b[1] - a[1];
-	var x2 = c[0] - a[0];
-	var y2 = c[1] - a[1];
-	var cos = (x1 * x2 + y1 * y2)/(Math.pow(Math.pow(x1, 2) + Math.pow(y1, 2), 0.5) * Math.pow(Math.pow(x2, 2) + Math.pow(y2, 2), 0.5));
-	if(cos +  Math.cos(anpha) < 0){
-		return true;
-	}
-	return false;
-}
