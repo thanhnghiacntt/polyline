@@ -1,5 +1,79 @@
 .form {
 	margin: 20px;
 }
+#controler{
+    position: fixed;
+    left: 0px;
+    top: 0px;
+    z-index: 999999;
+    background: #ffffff;
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-bottom: 10px;
+}
 
+#basemaps-wrapper{
+    position: fixed;
+    right: 0px;
+    top: 0px;
+    width: 82px;
+    z-index: 999999;
+    padding-right: 5px;
+    padding-bottom: 5px;
+}
 
+.waiting{
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    z-index: 999999;
+    background: #ffffff;
+    width: 100%;
+    height: 100%;
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+
+.leaflet-bottom{
+    display: none !important;
+}
+
+.rain{
+    display: none!important;
+}
+
+.info{
+    position: fixed;
+    bottom: 0px;
+    right: 0px;
+    width: 85px;
+    z-index: 999999;
+    height: 200px;
+}
+.width100{
+    width:100px;
+}
+
+.mf-logo-container.mf-left {
+    left: 10px;
+    position: fixed;
+    bottom: 10px;
+    z-index: 9999;
+}
+
+.mf-logo {
+    cursor: pointer;
+    width: 75px;
+    opacity: 1;
+}
+
+.option{
+    position: fixed;
+    right: 5px;
+    top: 25px;
+    z-index: 9999;
+    width: 76px;
+    background: white;
+    display: none;
+}

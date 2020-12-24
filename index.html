@@ -1,32 +1,107 @@
 <html>
 	<head>
+        <title>IOT Link Khí Tượng Thủy Văn</title>
+        <link type="image/x-icon" rel="shortcut icon" href="images/logo.ico">
 		<meta charset="UTF-8">
 		<link rel="stylesheet" href="css/bootstrap.min.css"/>
-		<link rel="stylesheet" href="css/temp.css"/>
-		<script src='js/jquery-3.4.1.min.js'></script>
-		<script src='js/temp.js'></script>
-		<script>
-		</script>
+        <link rel="stylesheet" href="css/temp.css"/>
+        <link rel="stylesheet" href="leaflet/leaflet.css"/>
+        <style>
+            #root {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                background-color: #f2efe9;
+            }
+        </style>
+
+        <script src="leaflet/leaflet.js"></script>
+        <script src='js/leaflet-heat.js'></script>
+        <script src='js/jquery-3.4.1.min.js'></script>
 	</head>
 	
 	<body>
-		<form class="form">
-		  <div class="form-group">
-			<label for="in1">Polyline</label>
-			<input type="text" class="form-control" id="in1" aria-describedby="emailHelp" value="_r`aByrnsS{Di@oDv@{Dd@gB_N" placeholder="{zaaBsgosSAOWkDy@oN_CJqGn@kJn@">
-		  </div>
-		  <div class="form-group">
-			<label for="in2">Điền vào số km</label>
-			<input type="number" class="form-control" id="in2" value="0.05" placeholder="0.05">
-		  </div>
-		  <button type="button" class="btn btn-primary"  onclick="clickStart()">Submit</button>
-		  <div class="form-group">
-			<label for="in2">Result: </label>			
-			<span id="test" class="form-text text-muted"></span>
-		  </div>
-		</form>
+		<div id="controler">
+            <div>
+                <div class="form-group">
+                    <div class="form-row">
+                        <label>Lượng mưa</label>
+                        <select id="dayRain" class="form-control">
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="rain col-sm">
+                            <select id="minRain" class="form-control">
+                            </select>
+                        </div>
+                        <div class="d-inline-flex p-2 rain">
+                            Đến
+                        </div>
+                        <div class="rain col-sm">
+                            <select id="maxRain" class="form-control">
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group form-check">
+                    <input class="form-check-input" checked="checked" type="checkbox" id="landslide">
+                    <label class="form-check-label">
+                        Điểm trượt lở Quảng Nam
+                    </label>
+                </div>
+                <div class="form-group">
+                    <div class="form-row">
+                        <label>Vùng khả năng sạt lở</label>
+                        <select id="score" class="form-control"></select>
+                    </div>
+                </div>
+                <button type="submit" onclick="start()" class="btn btn-primary">Lọc hiển thị</button>
+            </div>
+            <div class="waiting">
+                <div class="spinner-border" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+            </div>
+        </div>
 		<div id="root"></div>
+        <div id="basemaps-wrapper">
+            <select id="basemaps">
+                <option value="https://rtile.map4d.vn/all/2d/{z}/{x}/{y}.png">Map4D</option>
+                <option value="https://mt0.google.com/vt/lyrs=s&x={x}&y={y}&z={z}">Vệ Tinh</option>
+            </select>
+        </div>
+        <div class="option">
+            <label class="form-check-label" style="padding-left: 5px;">Viền</label>
+            <input class="form-check-input" type="checkbox" id="optionVien" style="right: 8px;">
+        </div>
+        <div class="info">
+            <div class="row">
+                <div class="d-inline-flex p-2 btn btn-primary width100" id="ratThap">Rất Thấp</div>
+            </div>
+            <div class="row">
+                <div class="d-inline-flex p-2 btn btn-primary width100" id="thap">Thấp</div>
+            </div>
+            <div class="row">
+                <div class="d-inline-flex p-2 btn btn-primary width100" id="trungBinh">Trung Bình</div>
+            </div>
+            <div class="row">
+                <div class="d-inline-flex p-2 btn btn-primary width100" id="cao">Cao</div>
+            </div>
+            <div class="row">
+                <div class="d-inline-flex p-2 btn btn-primary width100" id="ratCao">Rất Cao</div>
+            </div>
+        </div>
 		<script>
+            var map = L.map('root').setView([16.09796307302983, 108.22541850139493], 12);
+
+            var layer = L.tileLayer('https://rtile.map4d.vn/all/2d/{z}/{x}/{y}.png', {
+                attribution: 'IOT Link',
+            }).addTo(map);
+
+            //addressPoints = addressPoints.map(function (p) { return [p[0], p[1]]; });
+
+            //var heat = L.heatLayer(addressPoints).addTo(map);
+            /*
 			var map = null;
 			function callback(){
 			  map = new map4d.Map(document.getElementById("root"),
@@ -36,27 +111,16 @@
 					geolocate: true,
 					controls :true,
 					tilt: 0,        
-					accessKey: `208e1c99aa440d8bc2847aafa3bc0669`
+					accessKey: '208e1c99aa440d8bc2847aafa3bc0669'
 				  }
 				)
-			  //set switch mode Auto for automatically switching between 2D & 3D
-				map.setSwitchMode(map4d.SwitchMode.Auto)
 				map.enable3dMode(false)
-			}
+			}*/
 		</script>
-		<script src="https://api-dev.map4d.vn/sdk/map/js?key=208e1c99aa440d8bc2847aafa3bc0669&amp;callback=callback&amp;version=1.5.0" type="text/javascript"></script>
-		  <style>
-			body {
-			  margin: 0px;
-			  height: 100%;
-			}
 
-			#root {
-			  position: absolute;
-			  width: 100%;
-			  height: 100%;
-			  background-color: #f2efe9;
-			}
-		  </style>
+        <script src='js/temp.js'></script>
+        <div class="mf-logo-container mf-left"><a target="_blank" href="https://www.map4d.vn/" aria-label="Map4D Logo">
+            <img src="data:image/png;base64,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" class="mf-logo">
+        </a></div>
 	</body>
 </html>
